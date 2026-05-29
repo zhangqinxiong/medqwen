@@ -1,0 +1,110 @@
+好的，我们进一步将规划升级为**生产级、可以直接复制给其他 AI 的高精准提示词（Prompts）**。
+
+我为你将 Conda 环境命名为 **`unsloth_med_qwen`**（清晰包含了框架、领域和模型信息，避免与其他项目冲突）。
+
+以下是为你重新优化的完整规划信息，直接复制以下各模块的“AI 提示词”给其他 AI 工具，即可生成完全匹配你硬件和技术栈的工业级代码。
+
+---
+
+## 🛠 模块一：Conda 环境搭建与依赖安装
+
+### 给其他 AI 的提示词：
+
+> "我有一台搭载 **RTX 3060 (12GB)** 的 Windows/Linux 设备。我计划使用 **Unsloth** 框架对 **Qwen2-1.5B-Instruct** 模型进行医疗知识微调。请帮我编写一个完整的 Bash 脚本，用于自动化搭建开发环境。
+> **具体要求如下：**
+> 1. 创建一个名为 **`unsloth_med_qwen`** 的 Conda 虚拟环境，指定 **Python 3.10**。
+> 2. 激活该环境，并根据 Unsloth 官方推荐，安装适配 **CUDA 12.1** 且兼容消费级显卡（Ampere 架构 RTX 3060）的 PyTorch、Xformers 和 Unsloth。
+> 3. 使用 `pip` 安装微调必备的外围依赖库：`transformers`, `datasets`, `trl`, `peft`, `accelerate` 以及 `bitsandbytes`。
+> 4. 在脚本末尾打印一行提示，确认环境配置成功并显示当前 CUDA 是否可用。"
+> 
+> 
+
+---
+
+## 🗂 模块二：HuatuoGPT 数据清洗与 ChatML 格式化
+
+### 给其他 AI 的提示词：
+
+> "我下载了 **HuatuoGPT** 中文医疗数据集（JSON 格式）。我需要一个 Python 脚本 `data_process.py` 来清洗和转换这些数据，使其完全适配 Unsloth 和 Qwen2 的训练格式。
+> **具体要求如下：**
+> 1. **格式转换：** 将原始的医患对话转换为标准的 **ChatML 格式**（即 `messages` 列表嵌套 `role` 与 `content`）。内置一个 System Prompt：`'你是一个专业的临床医生，请根据患者的症状提供准确、严谨且温暖的医学建议。'`。
+> 2. **Token 截断与过滤：** 实例化 `Qwen/Qwen2-1.5B-Instruct` 的 Tokenizer。计算转换后每条数据的总 Token 长度，**严格过滤掉总 Token 数大于 1024 的样本**（防止大文本导致 3060 显卡在训练时 OOM）。
+> 3. **数据集切分：** >    * 随机抽取 **20,000 条** 清洗后的高质量样本作为训练集（`train_med.json`）。
+> * 随机抽取 **1,000 条** 样本作为验证集（`eval_med.json`）。
+> 
+> 
+> 4. **代码示例：** 最终生成的 JSON 结构必须严格符合以下格式：
+> 
+> 
+> ```json
+> [
+>   {
+>     "messages": [
+>       {"role": "system", "content": "你是一个专业的临床医生..."},
+>       {"role": "user", "content": "患者提问..."},
+>       {"role": "assistant", "content": "医生回答..."}
+>     ]
+>   }
+> ]
+> ```"
+> 
+> ```
+> 
+> 
+
+---
+
+## 🚀 模块三：Unsloth 16-bit 混合精度训练脚本
+
+由于 Qwen2-1.5B 极其轻量，加载仅需 ~3GB 显存，我们在 3060 上**不需要开启 4-bit 量化**，直接采用 **16-bit（bfloat16 或 float16）进行 LoRA 微调**。这样可以完美保留模型的逻辑和语言通顺度。
+
+### 给其他 AI 的提示词：
+
+> "请基于 **Unsloth** 框架，编写一个用于微调 **Qwen2-1.5B-Instruct** 的 Python 训练脚本 `train.py`。读取上一步生成的 `train_med.json` 和 `eval_med.json`。请严格按照以下参数进行配置：
+> **1. 模型与LoRA配置：**
+> * 使用 `FastLanguageModel.from_pretrained` 加载 `"Qwen/Qwen2-1.5B-Instruct"`。
+> * `max_seq_length = 1024`，`load_in_4bit = False`（直接使用 16-bit 提升医疗文本生成质量）。
+> * 调用 `get_peft_model` 开启 LoRA。配置：`r = 16`, `lora_alpha = 32`, `lora_dropout = 0`。
+> * `target_modules` 覆盖：`["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]`。
+> 
+> 
+> **2. 训练器（SFTTrainer）与超参数：**
+> * `dataset_text_field = "messages"` 对应 ChatML 格式。
+> * `per_device_train_batch_size = 4`（1.5B模型在3060上完全可以跑 Batch Size=4）。
+> * `gradient_accumulation_steps = 4`（等效总 Batch Size = 16）。
+> * `learning_rate = 2e-4`, `lr_scheduler_type = "cosine"`, `weight_decay = 0.01`。
+> * `num_train_epochs = 3`。
+> * 根据 3060 显卡代际，设置 `fp16 = True` 或 `bf16 = True`（推荐优先使用混合精度）。
+> * 必须开启 `gradient_checkpointing = True` 压低显存峰值。
+> * 评测设置：`evaluation_strategy = "steps"`, `eval_steps = 200`, `logging_steps = 10`。
+> 
+> 
+> **3. 模型保存与导出：**
+> * 训练结束后，首先将 LoRA 权重保存至 `./medical_qwen_lora`。
+> * 紧接着，编写一行可选代码，使用 Unsloth 的 `model.save_pretrained_merged` 将 LoRA 权重与基座模型彻底合并，导出为一个完整独立的 16-bit HuggingFace 模型，保存至 `./medical_qwen_merged`。"
+> 
+> 
+
+---
+
+## 💬 模块四：流式终端交互推理测试脚本
+
+### 给其他 AI 的提示词：
+
+> "我刚刚使用 Unsloth 完成了 Qwen2-1.5B 医疗模型的微调，LoRA 权重保存在 `./medical_qwen_lora`。为了验证模型的‘医术’，请为我编写一个 Python 推理脚本 `inference.py`。
+> **具体要求如下：**
+> 1. 使用 Unsloth 的 `FastLanguageModel.from_pretrained` 重新加载基座 `Qwen/Qwen2-1.5B-Instruct` 并挂载我们的微调权重 `./medical_qwen_lora`。
+> 2. 必须调用 `FastLanguageModel.for_inference(model)` 开启 Unsloth 的原生推理加速。
+> 3. 内置相同的 System Prompt：`'你是一个专业的临床医生，请根据患者的症状提供准确、严谨且温暖的医学建议。'`。
+> 4. 使用 `TextStreamer` 实现**流式传输输出**，让医生的回答能够像 ChatGPT 一样逐字在终端打印。
+> 5. 编写一个 `while True` 循环，建立终端交互对话，支持连续输入不同的病人症状进行测试。当输入 'exit' 时退出程序。"
+> 
+> 
+
+---
+
+### 💡 核心规划备忘（建议随身携带）
+
+1. **环境名：** `unsloth_med_qwen`
+2. **数据策略：** 过滤超过 1024 token 的文本。2 万条数据在 3060 + Unsloth 下，预计 **1.5 小时内** 就能跑完 3 个 Epoch。
+3. **显存预估：** 训练时显存约占用 7GB~9GB（得益于 1.5B 模型的轻量和 Unsloth 的优化），离 12GB 还有安全冗余，绝不爆显存。

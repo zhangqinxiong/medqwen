@@ -1,0 +1,22 @@
+{
+  "n_samples": 50,
+  "model_a_label": "Base Qwen2-1.5B",
+  "model_b_label": "Fine-tuned (Medical)",
+  "model_a": {
+    "avg_accuracy": 2.81,
+    "avg_completeness": 1.7,
+    "avg_safety": 2.72,
+    "avg_total": 2.41
+  },
+  "model_b": {
+    "avg_accuracy": 3.24,
+    "avg_completeness": 1.72,
+    "avg_safety": 2.82,
+    "avg_total": 2.59
+  },
+  "preference": {
+    "model_a_wins": 14,
+    "model_b_wins": 36,
+    "equal": 0
+  }
+}

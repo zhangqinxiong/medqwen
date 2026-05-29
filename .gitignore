@@ -1,0 +1,36 @@
+# Model checkpoints
+medical_qwen_lora/
+medical_qwen_merged/
+
+# Unsloth compiled cache
+unsloth_compiled_cache/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Environment
+.env
+venv/
+.venv/
+
+# Paper build artifacts
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/missfont.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local config
+settings.local.json
