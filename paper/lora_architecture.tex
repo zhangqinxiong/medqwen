@@ -1,0 +1,173 @@
+% LoRA Architecture Diagram Optimized
+\documentclass[tikz,border=15pt]{standalone}
+\usepackage{amsmath,amssymb}
+
+% --- UNIVERSAL PREAMBLE BLOCK ---
+\usepackage{fontspec}
+\usepackage[english, bidi=basic, provide=*]{babel}
+\babelprovide[import, onchar=ids fonts]{english}
+% 使用通用的 Noto Sans 字体以确保跨平台完美编译
+\babelfont{rm}{Noto Sans}
+% --------------------------------
+
+% 引入了 decorations.pathreplacing 用于绘制标准的大括号
+\usetikzlibrary{shapes,arrows.meta,positioning,calc,backgrounds,decorations.pathreplacing}
+
+\begin{document}
+
+\begin{tikzpicture}[
+    node distance=6mm and 8mm,
+    % 基础框样式
+    box/.style={
+        draw=black, thick, rounded corners=3pt,
+        minimum width=5.5cm, minimum height=0.8cm, align=center, fill=white,
+        font=\normalsize
+    },
+    % 冻结权重样式（灰色）
+    frozen/.style={
+        draw=black, thick, rounded corners=3pt,
+        fill=black!10, align=center
+    },
+    % 可训练权重样式（浅蓝色，虚线）
+    trainable/.style={
+        draw=black, thick, dashed, rounded corners=3pt,
+        fill=blue!5, align=center
+    },
+    % LoRA 标识样式
+    lora_badge/.style={
+        draw=black, dashed, thick, rounded corners=3pt,
+        fill=blue!5, align=center, font=\small, inner sep=4pt
+    },
+    % 箭头样式
+    arrow/.style={
+        ->, >=Stealth, thick, black
+    },
+    % 加法操作符样式
+    operator/.style={
+        draw=black, thick, circle, minimum size=7mm, inner sep=0pt, align=center, font=\Large
+    }
+]
+
+% ==========================================
+% LEFT: Transformer Layer with LoRA Adapters
+% ==========================================
+\begin{scope}[local bounding box=left_panel]
+    % 节点定义
+    \node[box] (input) {\textbf{Input Embeddings}};
+    
+    \node[box, below=of input] (ln1) {\textbf{Layer Norm}};
+    
+    \node[box, below=of ln1, minimum height=1.4cm] (mha) {\textbf{Multi-Head Self-Attention}\\ \small (Q, K, V, O projections)};
+    
+    \node[lora_badge, right=4mm of mha] (lora1) {\textbf{LoRA}\\ \small $r=16$};
+    
+    \node[box, below=of mha] (add1) {\textbf{Add \& Residual}};
+    
+    \node[box, below=of add1] (ln2) {\textbf{Layer Norm}};
+    
+    \node[box, below=of ln2, minimum height=1.2cm] (ffn) {\textbf{FFN}\\ \small (Gate, Up, Down)};
+    
+    \node[lora_badge, right=4mm of ffn] (lora2) {\textbf{LoRA}\\ \small $r=16$};
+    
+    \node[box, below=of ffn] (add2) {\textbf{Add \& Residual}};
+    
+    \node[below=5mm of add2, font=\small\itshape, text=black!60] (output) {Output to Next Layer};
+
+    % 垂直连线
+    \draw[arrow] (input) -- (ln1);
+    \draw[arrow] (ln1) -- (mha);
+    \draw[arrow] (mha) -- (add1);
+    \draw[arrow] (add1) -- (ln2);
+    \draw[arrow] (ln2) -- (ffn);
+    \draw[arrow] (ffn) -- (add2);
+    \draw[arrow] (add2) -- (output);
+
+    % LoRA 虚线连接
+    \draw[thick, dashed, gray] (mha.east) -- (lora1.west);
+    \draw[thick, dashed, gray] (ffn.east) -- (lora2.west);
+
+    % 残差连接 1 (Bypass LN1 & MHA)
+    \coordinate (res1) at ($(input.south)!0.5!(ln1.north)$);
+    \draw[arrow] (res1) -- ++(-3.5,0) |- (add1.west);
+
+    % 残差连接 2 (Bypass LN2 & FFN)
+    \coordinate (res2) at ($(add1.south)!0.5!(ln2.north)$);
+    \draw[arrow] (res2) -- ++(-3.5,0) |- (add2.west);
+
+    % --- X24 LAYERS 专业大括号标注 ---
+    % 计算右侧括号的确切横坐标，避免与网络重叠
+    \coordinate (brace_x) at ($(lora1.east) + (0.4, 0)$);
+    \coordinate (brace_top) at (brace_x |- ln1.north);
+    \coordinate (brace_bottom) at (brace_x |- add2.south);
+    
+    % 移除了 mirror 属性，让大括号尖端正确指向右侧文字
+    \draw [decorate, decoration={brace, amplitude=8pt}, thick, black!60] 
+          (brace_top) -- (brace_bottom) 
+          node [midway, right=12pt, font=\large\itshape, text=black!60] {$\times 24$ Layers};
+
+    % 提取左侧标题的绝对 Y 坐标（用于让右侧标题完美对其齐）
+    \coordinate (title_y) at ($(input.north) + (0, 0.8)$);
+    \node[font=\bfseries\large] at (input.north |- title_y) {Transformer Layer with LoRA Adapters};
+    
+\end{scope}
+
+% ==========================================
+% RIGHT: LoRA Low-Rank Adaptation
+% ==========================================
+% 大幅向右移动 scope，彻底杜绝文字交叉重叠现象
+\begin{scope}[shift={(13.5, 0)}, local bounding box=right_panel]
+    
+    % 输入节点 (对齐左侧的 input)
+    \node[font=\Large, minimum height=0.8cm] (xnode) at (0, 0 |- input) {$x$};
+    
+    % 连线分叉点（形成对称树状图）
+    \coordinate (split) at ($(xnode.south) + (0, -0.4)$);
+
+    % W0 (左侧对称位置)
+    \coordinate (w0_center) at (-2.8, -2.8);
+    \node[frozen, minimum width=3.5cm, minimum height=2.2cm] (w0) at (w0_center) {\Large $W_0$ \\ \small Frozen pre-trained \\[-2pt] \small weight matrix \\ \small $\in \mathbb{R}^{d \times k}$};
+
+    % A 矩阵 (右侧对称位置，降维)
+    \coordinate (a_center) at (2.8, -2.0);
+    \node[trainable, minimum width=3.2cm, minimum height=1cm] (A) at (a_center) {\large $A$ \\ \footnotesize $\in \mathbb{R}^{r \times k}$ (Trainable)};
+
+    % B 矩阵 (右侧下方，升维)
+    \coordinate (b_center) at (2.8, -3.6);
+    \node[trainable, minimum width=3.2cm, minimum height=1cm] (B) at (b_center) {\large $B$ \\ \footnotesize $\in \mathbb{R}^{d \times r}$ (Trainable)};
+
+    % 加法器 (绝对居中)
+    \coordinate (sum_center) at (0, -5.5);
+    \node[operator] (sum) at (sum_center) {$+$};
+
+    % 输出节点 (绝对居中)
+    \coordinate (hout_center) at (0, -7.2);
+    \node[box, minimum width=5cm] (hout) at (hout_center) {\large $h = W_0x + \Delta Wx$ \\[-1pt] \normalsize $= W_0x + BAx$};
+
+    % --- 对称路由连线 ---
+    % 从输入垂直向下再左右分叉
+    \draw[thick] (xnode.south) -- (split);
+    \draw[arrow] (split) -| (w0.north);
+    \draw[arrow] (split) -| (A.north);
+
+    % A 到 B
+    \draw[arrow] (A.south) -- (B.north) node[midway, right, font=\small\itshape] {$r \ll \min(d,k)$};
+
+    % W0 汇聚到 加法器 (标准路径)
+    \draw[arrow] (w0.south) |- (sum.west) node[pos=0.75, above, font=\small] {Standard path};
+    
+    % B 汇聚到 加法器 (LoRA路径)
+    \draw[arrow, dashed] (B.south) |- (sum.east) node[pos=0.75, above, font=\small] {\textbf{LoRA path}};
+
+    % 加法器 到 输出
+    \draw[arrow] (sum.south) -- (hout.north);
+
+    % 右侧标题 (使用之前保存的 title_y，确保和左边标题百分百水平对齐)
+    \node[font=\bfseries\large] at (0, 0 |- title_y) {LoRA Low-Rank Adaptation};
+
+    % 底部说明
+    \node[below=6mm of hout, font=\footnotesize\itshape, align=center] {Only $A$ and $B$ are updated during fine-tuning;\\ $W_0$ remains frozen.};
+    
+\end{scope}
+
+\end{tikzpicture}
+\end{document}

@@ -1,18 +1,104 @@
 % MedQwen — Course Paper
 % 张钦雄  2112505018
-% Compile with: xelatex -> xelatex (twice for references)
+% Compile with: xelatex -> bibtex -> xelatex -> xelatex
 
-\documentclass[10pt,twocolumn,a4paper]{article}
+% ============================================================
+% 计算机专业课程论文格式  (Chinese CS Course Paper Format)
+% 正文字体：Times New Roman / 宋体 (SimSun)
+% 标题字体：Times New Roman Bold / 黑体 (SimHei)
+% 等宽字体：Courier New
+% 页面：A4，1.5 倍行距
+% ============================================================
 
-% ---------- Packages ----------
-\usepackage[utf8]{inputenc}
+\documentclass[12pt,a4paper]{article}
+
+% ---------- 中文支持与字体配置 ----------
 \usepackage{fontspec}
-\usepackage{xeCJK}
+\usepackage[UTF8, fontset=none, scheme=plain]{ctex}
+
+% 强制使用英文标签
+\renewcommand{\figurename}{Figure}
+\renewcommand{\tablename}{Table}
+\renewcommand{\refname}{References}
+
+% 英文/数学字体
+\setmainfont{Times New Roman}
+\setsansfont{Arial}
+\setmonofont{Courier New}[Scale=0.85]
+
+% 中文字体
+% 宋体(SimSun) — 正文；黑体(SimHei) — 标题；仿宋(FangSong) — 引文
+\setCJKmainfont{SimSun}[AutoFakeBold=true, AutoFakeSlant=true]
+\setCJKsansfont{SimHei}
+\setCJKmonofont{FangSong}
+
+% ---------- 页面布局 (GB/T 7713) ----------
 \usepackage{geometry}
-\geometry{margin=0.9in}
+\geometry{
+  a4paper,
+  top=2.54cm,
+  bottom=2.54cm,
+  left=3.17cm,
+  right=3.17cm
+}
+
+% ---------- 1.5 倍行距 ----------
+\usepackage{setspace}
+\setstretch{1.5}
+
+% ---------- 标题格式 ----------
+% 论文标题：小二号(18pt) 加粗 居中
+% 作者：四号(14pt) 居中
+% 日期：小四号(12pt) 居中
+\usepackage{titling}
+\pretitle{\begin{center}\bfseries\zihao{-2}}
+\posttitle{\par\end{center}}
+\preauthor{\begin{center}\zihao{4}}
+\postauthor{\par\end{center}}
+\predate{\begin{center}\zihao{-4}}
+\postdate{\par\end{center}}
+
+\usepackage{titlesec}
+% 一级标题：三号(16pt) 加粗 居中
+\titleformat{\section}{\centering\zihao{3}\bfseries}{\thesection}{1em}{}
+\titlespacing{\section}{0pt}{20pt}{8pt}
+% 二级标题：四号(14pt) 加粗 左对齐
+\titleformat{\subsection}{\raggedright\zihao{4}\bfseries}{\thesubsection}{1em}{}
+\titlespacing{\subsection}{0pt}{14pt}{6pt}
+% 三级标题：小四号(12pt) 加粗 左对齐
+\titleformat{\subsubsection}{\raggedright\zihao{-4}\bfseries}{\thesubsubsection}{1em}{}
+\titlespacing{\subsubsection}{0pt}{10pt}{4pt}
+
+% ---------- 摘要格式 ----------
+\renewenvironment{abstract}{%
+  \par\addvspace{12pt}
+  \begin{center}
+    \bfseries\zihao{-4} Abstract
+  \end{center}
+  \par\addvspace{6pt}
+  \begingroup\zihao{-4}%
+}{%
+  \endgroup\par\addvspace{12pt}%
+}
+
+% ---------- 关键词格式 ----------
+\newcommand{\keywords}[1]{%
+  \par\noindent{\bfseries\zihao{-4} Keywords: }\hangindent=2em\zihao{-4}{#1}\par
+}
+
+% ---------- 图表标题：五号(10.5pt)，仅标签加粗 ----------
+\usepackage{caption}
+\captionsetup{font={small}, labelfont={bf}}
+
+% ---------- 表格行距：正文 1.5 倍，表格内恢复紧凑 ----------
+\renewcommand{\arraystretch}{0.85}
+
+% ---------- 其他常用宏包 ----------
 \usepackage{amsmath,amssymb}
+\usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{microtype}
+\usepackage[numbers,sort&compress]{natbib}
 \usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
@@ -21,8 +107,12 @@
     urlcolor=black
 }
 
-% ---------- Custom commands ----------
-\newcommand{\keywords}[1]{\par\medskip\noindent\textbf{Keywords:} #1\par}
+% ---------- 页码 ----------
+\pagestyle{plain}
+
+% ============================================================
+% 正文开始
+% ============================================================
 
 % ---------- Title & Author ----------
 \title{MedQwen: Efficient Low-Resource Fine-Tuning of\\
@@ -31,17 +121,18 @@
 \author{
   \textbf{张钦雄} \\
   Student ID: 2112505018 \\
-  Guangdong University of Technology
+  Guangdong University of Technology \\
+  \small 960151285@qq.com
 }
+
+\date{June 2026}
 
 \begin{document}
 
-\twocolumn[
-\begin{@twocolumnfalse}
 \maketitle
 
 \begin{abstract}
-Large language models show promise for clinical applications, but adapting them to medicine typically requires a lot of compute that many labs cannot afford. We ask whether lightweight, parameter-efficient fine-tuning can bridge this gap between general-purpose capabilities and specialized medical knowledge under realistic resource constraints.
+Large language models show promise for clinical applications, but adapting them to medicine typically requires substantial computational resources that many labs cannot afford. We investigate whether lightweight, parameter-efficient fine-tuning can bridge this gap between general-purpose capabilities and specialized medical knowledge under realistic resource constraints.
 
 We apply LoRA to Qwen2-1.5B-Instruct, updating only 18.4 million parameters---about 1.18\% of the total---using 20,000 Chinese medical conversations from the HuatuoGPT dataset. Training takes under five hours on a single RTX 3060 with 12 GB of memory.
 
@@ -51,9 +142,6 @@ Our results suggest that parameter-efficient fine-tuning is a practical option f
 \end{abstract}
 
 \keywords{Chinese Medical Dialogue, Large Language Model, LoRA, Parameter-Efficient Fine-Tuning, Low-Resource Adaptation}
-
-\end{@twocolumnfalse}
-]
 
 % ============================================================
 % 1. Introduction
@@ -77,7 +165,7 @@ Our main contributions are as follows:
     \item The whole pipeline fits on one consumer-grade GPU, establishing a practical baseline for medical domain adaptation when resources are tight.
 \end{itemize}
 
-In the next section we cover related work on medical LLMs and PEFT. Section~\ref{sec:method} describes our model setup, LoRA configuration, and data pipeline. Experiments and results follow in Section~\ref{sec:experiments}, with discussion and conclusion in Section~\ref{sec:discussion} and Section~\ref{sec:conclusion}.
+The rest of this paper is organized as follows. Section~\ref{sec:related} reviews related work on medical LLMs and PEFT. Section~\ref{sec:method} describes our methodology, including the base model, LoRA configuration, and data pipeline. Section~\ref{sec:experiments} details the experimental setup, followed by results in Section~\ref{sec:results}. Section~\ref{sec:discussion} discusses key findings and limitations. Section~\ref{sec:conclusion} concludes the paper.
 
 % ============================================================
 % 2. Related Work
@@ -87,7 +175,7 @@ In the next section we cover related work on medical LLMs and PEFT. Section~\ref
 
 \subsection{Medical Large Language Models}
 
-LLMs have been widely explored for medical applications in the last few years. Med-PaLM 2~\cite{singhal2023medpalm} showed that scaling a general-purpose LLM with prompt engineering could pass US medical licensing exams, while GPT-4~\cite{nori2023gpt4} performed well on clinical benchmarks without any medical fine-tuning. Large-scale pre-training clearly captures a lot of medical knowledge, but there is a catch: the best-performing models are also the most expensive to run.
+LLMs have been widely explored for medical applications in the last few years. Med-PaLM 2~\cite{singhal2023medpalm} showed that scaling a general-purpose LLM with prompt engineering could pass US medical licensing exams, while GPT-4~\cite{nori2023gpt4} performed well on clinical benchmarks without any medical fine-tuning. Large-scale pre-training clearly captures a substantial amount of medical knowledge; however, the best-performing models are also the most expensive to run.
 
 In the Chinese medical domain, several efforts have adapted LLMs to handle the linguistic and clinical particularities of Chinese healthcare conversations. BenTsao~\cite{wang2023bentsao}, also known as Huatuo, fine-tuned LLaMA on Chinese medical dialogue data. BianQue~\cite{chen2023bianque} focused on multi-turn alignment for clinical conversation. Zhongjing~\cite{yang2023zhongjing} and Shennong~\cite{shennong2023} built Chinese medical LLMs based on Ziya and LLaMA architectures, respectively. While these models have advanced the state of the art, almost all rely on full fine-tuning of 7B-parameter or larger models, requiring computational resources that are not universally available.
 
@@ -109,9 +197,18 @@ Human evaluation remains the gold standard for clinical dialogue quality, yet it
 \section{Methodology}
 \label{sec:method}
 
+Figure~\ref{fig:pipeline} provides an overview of the entire MedQwen pipeline, from data collection and preprocessing through LoRA fine-tuning to evaluation.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{pipeline.pdf}
+\caption{Overview of the MedQwen pipeline. The system takes Chinese medical dialogue data from HuatuoGPT, preprocesses it into ChatML format, performs LoRA fine-tuning on a single consumer GPU, and evaluates the resulting model through multiple automatic metrics and blind clinician assessment.}
+\label{fig:pipeline}
+\end{figure}
+
 \subsection{Base Model}
 
-We select Qwen2-1.5B-Instruct~\cite{yang2024qwen2} as our base model. Qwen2 is a decoder-only transformer architecture trained on a large corpus covering both Chinese and English text, with particular strength in Chinese language understanding compared to English-centric models of similar size. The 1.5B-parameter variant offers a deliberate trade-off: it is small enough to fine-tune on a single consumer GPU, yet large enough to retain meaningful medical knowledge acquired during pre-training. Its instruction-tuned variant provides a solid foundation for dialogue generation out of the box, and we specialize it toward the medical domain.
+We select Qwen2-1.5B-Instruct~\cite{yang2024qwen2} as our base model. Qwen2 is a decoder-only transformer architecture trained on a large corpus covering both Chinese and English text, with particular strength in Chinese language understanding compared to English-centric models of similar size. The 1.5B-parameter variant offers a deliberate trade-off: it is small enough to fine-tune on a single consumer GPU, yet large enough to retain meaningful medical knowledge acquired during pre-training. Its instruction-tuned variant provides a solid foundation for dialogue generation, and we specialize it toward the medical domain.
 
 \subsection{Low-Rank Adaptation}
 
@@ -123,7 +220,14 @@ Full fine-tuning updates all parameters of a pre-trained model during adaptation
 h = W_0 x + \Delta W x = W_0 x + BAx,
 \end{equation}
 
-where $B \in \mathbb{R}^{d \times r}$, $A \in \mathbb{R}^{r \times k}$, and the rank $r \ll \min(d, k)$. During training, only $A$ and $B$ are updated. We set $r = 16$ and $\alpha = 32$ with zero dropout, following the principle that a higher rank captures more domain-specific patterns while still keeping the parameter count minimal. The scaling factor $\alpha / r$ controls the magnitude of the adaptation.
+where $B \in \mathbb{R}^{d \times r}$, $A \in \mathbb{R}^{r \times k}$, and the rank $r \ll \min(d, k)$. During training, only $A$ and $B$ are updated. Figure~\ref{fig:lora_arch} illustrates this mechanism. We set $r = 16$ and $\alpha = 32$ with zero dropout, following the principle that a higher rank captures more domain-specific patterns while still keeping the parameter count minimal. The scaling factor $\alpha / r$ controls the magnitude of the adaptation.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{lora_architecture.pdf}
+\caption{LoRA low-rank adaptation mechanism. Left: a standard transformer layer with LoRA adapters injected into both attention and feed-forward projections. Right: the low-rank decomposition $W_0 + BA$, where only $A$ and $B$ are updated during fine-tuning while $W_0$ remains frozen.}
+\label{fig:lora_arch}
+\end{figure}
 
 \subsubsection{Target Modules}
 
@@ -131,17 +235,17 @@ LoRA adapters are applied to all attention projections (query, key, value, and o
 
 \begin{table}[ht]
 \centering
-\caption{Trainable parameters by target module.}
+\caption{Trainable parameters by module.}
 \label{tab:lora_params}
 \begin{tabular}{lcc}
 \toprule
-\textbf{Module Group} & \textbf{Params} & \textbf{Prop.} \\
+\textbf{Module Group} & \textbf{Parameters} & \textbf{Proportion (\%)} \\
 \midrule
-Attention (q, k, v, o) & 9,961,472 & 53.9\% \\
-Feed-forward (gate, up, down) & 8,503,296 & 46.1\% \\
+Attention (Q, K, V, O) & 9,961,472 & 53.9\% \\
+FFN (Gate, Up, Down) & 8,503,296 & 46.1\% \\
 \midrule
 Total trainable & 18,464,768 & 1.18\% \\
-Full model & 1,562,179,072 & 100\% \\
+Full model size & 1,562,179,072 & 100\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -160,7 +264,7 @@ Table~\ref{tab:training_config} lists the complete training hyperparameters. Mix
 \midrule
 Optimizer & AdamW \\
 Learning rate & $2 \times 10^{-4}$ \\
-Scheduler & Cosine (warmup 0.1) \\
+Scheduler & Cosine (warmup ratio 0.1) \\
 Batch size / device & 4 \\
 Gradient accumulation & 4 \\
 Effective batch size & 16 \\
@@ -177,7 +281,14 @@ Hardware & RTX 3060 (12 GB) \\
 \end{tabular}
 \end{table}
 
-The effective batch size of 16 is achieved by accumulating gradients over 4 steps with a per-device batch size of 4, which avoids out-of-memory errors while maintaining training stability.
+The effective batch size of 16 is achieved by accumulating gradients over 4 steps with a per-device batch size of 4, which avoids out-of-memory errors while maintaining training stability. Figure~\ref{fig:training_loss} shows the training and evaluation loss curves throughout the fine-tuning process. The training loss decreases steadily from 2.25 to approximately 1.45, while the evaluation loss stabilizes around 1.63 after roughly 2,000 steps, indicating no overfitting.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{training_loss.pdf}
+\caption{Training and evaluation loss curves during LoRA fine-tuning. The model converges smoothly within approximately 2,000 steps, with evaluation loss stabilizing around 1.63.}
+\label{fig:training_loss}
+\end{figure}
 
 \subsection{Training Framework: Unsloth}
 
@@ -187,15 +298,14 @@ We implement our training pipeline using Unsloth~\cite{unsloth2024}, a lightweig
 
 \subsubsection{Data Source}
 
-We use the HuatuoGPT dataset~\cite{zhang2023huatuogpt}, specifically the ShareGPT-format collection of Chinese medical conversation pairs\footnote{shibing624/huatuo\_medical\_qa\_sharegpt on HuggingFace Datasets.}. The dataset contains 276,042 question-answer pairs spanning a wide range of medical specialties including internal medicine, surgery, pediatrics, dermatology, and gynecology. Each pair consists of a patient query and a physician response written in Chinese.
+We use the HuatuoGPT dataset~\cite{zhang2023huatuogpt}, specifically the ShareGPT-format collection of Chinese medical conversation pairs\footnote{\url{https://huggingface.co/datasets/shibing624/huatuo\_medical\_qa\_sharegpt}}. The dataset contains 276,042 question-answer pairs spanning a wide range of medical specialties including internal medicine, surgery, pediatrics, dermatology, and gynecology. Each pair consists of a patient query and a physician response written in Chinese.
 
 \subsubsection{Data Processing Pipeline}
 
 The raw data is converted into the ChatML format with distinct system, user, and assistant role markers. We use the following system prompt to establish the clinical context:
 
 \begin{quote}
-\texttt{你是一个专业的临床医生，请根据患者的问题}\\
-\texttt{提供专业、准确、安全的医疗建议。}
+  你是一个专业的临床医生，请根据患者的问题提供专业、准确、安全的医疗建议。
 \end{quote}
 
 Each conversation is tokenized and filtered to a maximum length of 1,024 tokens to prevent out-of-memory errors during training on the RTX 3060. From the filtered pool, we randomly sample 20,000 pairs for training and hold out 1,000 pairs for evaluation. Using a subset rather than the full dataset keeps training time under five hours while still providing sufficient domain coverage.
@@ -273,7 +383,7 @@ After scoring both responses for a given question, each evaluator indicates an o
 
 \subsubsection{Inter-rater Agreement}
 
-Inter-rater agreement is measured using Cohen's $\kappa$ (for pairwise ratings) and Fleiss' $\kappa$ (for the overall preference vote). A $\kappa$ value above 0.6 is considered substantial agreement. Disagreements between raters are resolved through discussion before finalizing the preference results.
+Inter-rater agreement is measured using Cohen's $\kappa$ (for pairwise ratings) and Fleiss' $\kappa$ (for the overall preference vote). A $\kappa$ value above 0.6 is considered substantial agreement. Disagreements between raters are resolved through discussion before finalizing the preference results. We acknowledge the limited scale of this evaluation (50 samples, 2 raters) and recommend larger-scale studies to confirm these findings.
 
 \subsection{Ablation Studies}
 
@@ -287,7 +397,7 @@ We conduct two ablation experiments to understand the impact of key design choic
 
 \subsection{Main Results}
 
-Table~\ref{tab:main_results} compares MedQwen against the base Qwen2-1.5B-Instruct model across all automatic metrics. MedQwen beats the base model on all four metrics, with the largest relative gains seen in perplexity (43.2\% reduction) and ROUGE-L (28.8\% improvement). BERTScore shows a more moderate but meaningful gain of 5.0\%, reflecting semantic improvements that are partially masked by the low absolute scores of the n-gram metrics. BLEU scores remain low for both models, which is expected for open-ended dialogue generation where exact n-gram overlap with a single reference is rare.
+Table~\ref{tab:main_results} compares MedQwen against the base Qwen2-1.5B-Instruct across all automatic metrics. MedQwen outperforms the base model on all four metrics, with the largest relative gains seen in perplexity (43.2\% reduction) and ROUGE-L (28.8\% improvement). BERTScore shows a more moderate but meaningful gain of 5.0\%, reflecting semantic improvements partially masked by the low absolute scores of the n-gram metrics. BLEU scores remain low for both models, which is expected for open-ended dialogue: a single clinical message can be expressed in numerous equivalent ways sharing minimal n-gram overlap with the reference, making BLEU unreliable for this task.
 
 \begin{table}[ht]
 \centering
@@ -322,7 +432,8 @@ Completeness & 1.70 & \textbf{1.72} & +1.2\% \\
 Safety & 2.72 & \textbf{2.82} & +3.7\% \\
 \midrule
 Overall mean & 2.41 & \textbf{2.59} & +7.5\% \\
-Preference & 28\% & \textbf{72\%} & --- \\
+\midrule
+\multicolumn{4}{l}{\textbf{Preference:} 72\% MedQwen vs 28\% Base} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -347,21 +458,36 @@ Table~\ref{tab:ablation_rank} shows the effect of varying the LoRA rank. Perform
 \end{tabular}
 \end{table}
 
-On data volume, 5K samples gives a perplexity of 6.85, dropping to 5.73 at 10K and 5.18 at 20K. The gain from 10K to 20K (0.55 PPL) is similar to the gain from 5K to 10K (0.59 PPL), so more data would probably help but with diminishing returns.
+Table~\ref{tab:ablation_data} shows the effect of varying the training data size. Performance improves consistently as data volume increases from 5K to 20K samples. The improvement from 10K to 20K (0.55 PPL) is comparable to that from 5K to 10K (0.59 PPL), indicating that further gains from additional data are likely but diminishing.
+
+\begin{table}[ht]
+\centering
+\caption{Effect of training data size on perplexity.}
+\label{tab:ablation_data}
+\begin{tabular}{lc}
+\toprule
+\textbf{Training samples} & \textbf{PPL $\downarrow$} \\
+\midrule
+5,000  & 6.85 \\
+10,000 & 5.73 \\
+20,000 & \textbf{5.18} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Efficiency Analysis}
 
-The total training time for MedQwen is approximately 5 hours on the RTX 3060, with peak GPU memory usage of 11.2 GB. During inference, the model consumes roughly 3 GB of memory and generates responses at an average rate of 3.2 seconds per output (measured over 200 inference runs with a maximum of 512 generated tokens). This makes MedQwen suitable for real-time or near-real-time deployment scenarios even on modest hardware. For comparison, full fine-tuning of the same model would require an estimated 48 GB of GPU memory and take roughly 4$\times$ longer per epoch, making it infeasible on the hardware used in this study.
+The total training time for MedQwen is approximately 5 hours on the RTX 3060, with peak GPU memory usage of 11.2 GB. During inference, the model consumes roughly 3 GB of memory and generates responses at an average rate of 3.2 seconds per output (measured over 200 inference runs with a maximum of 512 generated tokens). This makes MedQwen suitable for interactive deployment scenarios on modest hardware. For comparison, full fine-tuning of the same model would require an estimated 48 GB of GPU memory and take roughly 4$\times$ longer per epoch, making it infeasible on the hardware used in this study.
 
 \subsection{Qualitative Observations}
 
 We observe several qualitative differences between MedQwen and the base model. MedQwen responses tend to use more domain-appropriate medical terminology, provide more structured answers (e.g., listing possible causes before recommending actions), and more frequently include appropriate safety disclaimers. The base model, while fluent, sometimes produces generic advice that lacks the specificity expected in a clinical consultation. A representative example is shown in Table~\ref{tab:qualitative}.
 
-\begin{table*}[ht]
+\begin{table}[ht]
 \centering
 \caption{Comparison of responses to a patient query about chronic headache.}
 \label{tab:qualitative}
-\begin{tabular}{p{2.2cm}p{7.5cm}}
+\begin{tabular}{p{2.2cm}p{11.5cm}}
 \toprule
 \textbf{Query} & \multicolumn{1}{c}{\textbf{我最近经常头痛，特别是工作压力大的时候，要不要吃止痛药？}} \\
 \midrule
@@ -369,10 +495,10 @@ We observe several qualitative differences between MedQwen and the base model. M
 \midrule
 \textbf{MedQwen} & 根据您的描述，这可能是紧张型头痛。建议您先记录头痛的频率和诱因，尝试放松技巧和规律作息。如果疼痛影响日常生活，可在医师指导下短期使用布洛芬或对乙酰氨基酚。如果出现头痛加剧、伴随恶心呕吐或视力改变，请及时就医。 \\
 \midrule
-\textbf{Reference} & 您描述的症状符合紧张型头痛的特点。首先建议生活方式调整，包括减轻压力、保证睡眠。药物方面可考虑非处方止痛药如布洛芬，但不宜长期服用。如症状加重或出现 neurological 症状，建议做进一步检查。 \\
+\textbf{Reference} & 您描述的症状符合紧张型头痛的特点。首先建议生活方式调整，包括减轻压力、保证睡眠。药物方面可考虑非处方止痛药如布洛芬，但不宜长期服用。如症状加重或出现神经系统症状，建议做进一步检查。 \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 The MedQwen response more closely matches the reference in both content and structure, while the base model produces a shorter, less specific answer that omits important clinical nuance.
 
@@ -384,7 +510,7 @@ The MedQwen response more closely matches the reference in both content and stru
 
 \subsection{Key Findings}
 
-Our experiments yield three main findings. First, LoRA fine-tuning with as few as 18.4 million trainable parameters can meaningfully adapt a general-purpose LLM to the Chinese medical dialogue domain. A 43.2\% reduction in perplexity and a 72\% human preference rate is striking given that only 1.18\% of the weights are updated. This suggests the pre-trained model already encodes substantial medical knowledge --- LoRA mainly helps \textit{orient} this knowledge toward clinical conversation patterns and terminology.
+Our experiments yield three main findings. First, LoRA fine-tuning with as few as 18.4 million trainable parameters can meaningfully adapt a general-purpose LLM to the Chinese medical dialogue domain. A 43.2\% reduction in perplexity and a 72\% human preference rate is striking given that only 1.18\% of the weights are updated. This suggests the pre-trained model already encodes substantial medical knowledge---LoRA mainly helps \textit{orient} this knowledge toward clinical conversation patterns and terminology.
 
 Second, the evaluation metrics tell a complementary story. BERTScore captures the semantic improvement more reliably than BLEU or ROUGE-L, whose low absolute values and modest deltas understate the qualitative gains visible to human evaluators. For medical dialogue tasks, we recommend reporting BERTScore alongside human evaluation rather than relying on n-gram metrics alone.
 
@@ -406,12 +532,15 @@ Scaling to larger models (7B or 14B parameters) with the same LoRA setup would t
 \section{Conclusion}
 \label{sec:conclusion}
 
-This paper presented MedQwen, a Chinese medical dialogue model obtained by applying LoRA fine-tuning to Qwen2-1.5B-Instruct. Using only 18.4 million trainable parameters (1.18\% of the total) and 20,000 training examples from the HuatuoGPT dataset, the model achieves consistent improvements across automatic metrics and a 72\% preference rate in blind clinician evaluation. The entire training process completes in under five hours on a single RTX 3060 GPU. Parameter-efficient fine-tuning is a practical way to adapt LLMs for medical use when large-scale training infrastructure is not available.
+This paper presented MedQwen, a Chinese medical dialogue model obtained by applying LoRA fine-tuning to Qwen2-1.5B-Instruct. Using only 18.4 million trainable parameters (1.18\% of the total) and 20,000 training examples from the HuatuoGPT dataset, the model achieves consistent improvements across automatic metrics and a 72\% preference rate in blind clinician evaluation. The entire training process completes in under five hours on a single RTX 3060 GPU. Parameter-efficient fine-tuning provides a practical approach to medical domain adaptation for LLMs, particularly for resource-constrained settings where large-scale training infrastructure is unavailable.
 
 % ============================================================
 % References
 % ============================================================
-\bibliographystyle{unsrt}
+\subsection*{Code Availability}
+The complete source code for data processing, training, inference, and web deployment is publicly available at \url{https://github.com/zhangqinxiong/medqwen}.
+
+\bibliographystyle{unsrtnat}
 \bibliography{references}
 
 \end{document}

@@ -1,0 +1,86 @@
+% MedQwen Pipeline Diagram Optimized
+\documentclass[tikz,border=15pt]{standalone}
+\usepackage{amsmath,amssymb}
+
+% --- UNIVERSAL PREAMBLE BLOCK ---
+\usepackage{fontspec}
+\usepackage[english, bidi=basic, provide=*]{babel}
+\babelprovide[import, onchar=ids fonts]{english}
+% 使用通用的 Noto Sans 字体以确保跨平台完美编译
+\babelfont{rm}{Noto Sans}
+% --------------------------------
+
+\usetikzlibrary{shapes,arrows.meta,positioning,calc,fit,backgrounds}
+
+\begin{document}
+
+\begin{tikzpicture}[
+    % 统一定义节点之间的全局距离
+    node distance=8mm and 6mm,
+    % 基础框样式
+    box/.style={
+        thick, rounded corners=4pt,
+        align=center, inner sep=6pt,
+        minimum width=3.8cm, minimum height=1.8cm,
+        font=\normalsize
+    },
+    % 为不同阶段定义学术风柔和语义色彩
+    data/.style={box, fill=blue!5, draw=blue!60!black},
+    prep/.style={box, fill=cyan!5, draw=cyan!60!black},
+    train/.style={box, fill=green!5, draw=green!60!black},
+    model/.style={box, fill=red!5, draw=red!60!black},
+    eval/.style={box, fill=orange!5, draw=orange!60!black},
+    deploy/.style={box, fill=purple!5, draw=purple!60!black},
+    % 统一的箭头和连线样式
+    arrow/.style={
+        ->, >=Stealth, thick, draw=black!75
+    },
+    line/.style={
+        thick, draw=black!75
+    }
+]
+
+% ==========================================
+% ===== Main pipeline (top row) =====
+% ==========================================
+
+\node[data] (data) {\textbf{Data Source} \\[-1pt] \small HuatuoGPT Dataset \\ \small 276,042 QA pairs};
+
+\node[prep, right=of data] (prep) {\textbf{Preprocessing} \\[-1pt] \small ChatML formatting \\ \small System prompt \\ \small Tokenization filter \\ \small Max 1,024 tokens};
+
+\node[train, right=of prep] (lora) {\textbf{LoRA Fine-Tuning} \\[-1pt] \small Base: Qwen2-1.5B \\ \small LoRA: $r=16,\ \alpha=32$ \\ \small BF16 mixed precision \\ \small RTX 3060 $\sim$5 hours};
+
+\node[model, right=of lora] (medqwen) {\textbf{MedQwen} \\[-1pt] \small Fine-tuned medical \\ \small dialogue model \\ \small 1.5B parameters};
+
+% Arrows between top boxes
+\draw[arrow] (data.east) -- (prep.west);
+\draw[arrow] (prep.east) -- (lora.west);
+\draw[arrow] (lora.east) -- (medqwen.west);
+
+
+% ==========================================
+% ===== Bottom row: Eval & Deploy =====
+% ==========================================
+
+% 将 Evaluation 放于 LoRA 正下方，Deployment 放于 MedQwen 正下方
+\node[eval, below=1.2cm of lora] (eval) {\textbf{Evaluation} \\[-1pt] \small PPL \;|\; ROUGE/BLEU \\ \small BERTScore \;|\; Human Eval};
+
+\node[deploy, below=1.2cm of medqwen] (deploy) {\textbf{Deployment} \\[-1pt] \small Web interface \\ \small Interactive inference \\ \small Consumer GPU};
+
+% T-junction from MedQwen to Eval & Deploy (自动正交路由)
+\coordinate (split) at ($(medqwen.south) + (0, -0.6)$);
+\draw[line] (medqwen.south) -- (split);
+\draw[arrow] (split) -| (eval.north);
+\draw[arrow] (split) -- (deploy.north);
+
+
+% ==========================================
+% ===== Bottom Annotation =====
+% ==========================================
+
+% 使用整个图表的 current bounding box 底部中心点，确保注脚在全局视图中绝对居中
+\node[below=8mm, font=\small\itshape, text=black!60, align=center] at (current bounding box.south) (note) {All on a single consumer GPU (RTX 3060, 12 GB)};
+
+\end{tikzpicture}
+
+\end{document}
